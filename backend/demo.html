@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Recognition System - Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .preview {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .preview img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .result.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+
+        .result-content {
+            margin-top: 10px;
+        }
+
+        .result-content pre {
+            background: rgba(0, 0, 0, 0.05);
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 0.9rem;
+        }
+
+        .users-list {
+            margin-top: 20px;
+        }
+
+        .user-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-info strong {
+            color: #667eea;
+        }
+
+        .delete-btn {
+            padding: 8px 16px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .delete-btn:hover {
+            background: #c82333;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 10px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-indicator.online {
+            background: #28a745;
+        }
+
+        .status-indicator.offline {
+            background: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎭 Face Recognition System</h1>
+            <p>Register and recognize faces using AI</p>
+            <p style="margin-top: 10px; font-size: 0.9rem;">
+                <span class="status-indicator" id="statusIndicator"></span>
+                <span id="statusText">Checking server...</span>
+            </p>
+        </div>
+
+        <div class="cards">
+            <!-- Register Card -->
+            <div class="card">
+                <h2>📝 Register New User</h2>
+                <form id="registerForm">
+                    <div class="form-group">
+                        <label for="userId">User ID</label>
+                        <input type="text" id="userId" placeholder="e.g., user001" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="userName">Full Name</label>
+                        <input type="text" id="userName" placeholder="e.g., John Doe" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerImage">Face Image</label>
+                        <input type="file" id="registerImage" accept="image/*" required>
+                    </div>
+                    <div class="preview" id="registerPreview"></div>
+                    <button type="submit" class="btn" id="registerBtn">Register User</button>
+                    <div class="loading" id="registerLoading">
+                        <div class="spinner"></div>
+                        <p>Processing...</p>
+                    </div>
+                </form>
+                <div class="result" id="registerResult"></div>
+            </div>
+
+            <!-- Recognize Card -->
+            <div class="card">
+                <h2>🔍 Recognize User</h2>
+                <form id="recognizeForm">
+                    <div class="form-group">
+                        <label for="recognizeImage">Face Image</label>
+                        <input type="file" id="recognizeImage" accept="image/*" required>
+                    </div>
+                    <div class="preview" id="recognizePreview"></div>
+                    <button type="submit" class="btn" id="recognizeBtn">Recognize User</button>
+                    <div class="loading" id="recognizeLoading">
+                        <div class="spinner"></div>
+                        <p>Analyzing...</p>
+                    </div>
+                </form>
+                <div class="result" id="recognizeResult"></div>
+            </div>
+        </div>
+
+        <!-- Users List Card -->
+        <div class="card">
+            <h2>👥 Registered Users</h2>
+            <button class="btn" onclick="loadUsers()" style="margin-bottom: 20px;">Refresh Users List</button>
+            <div class="users-list" id="usersList">
+                <p style="text-align: center; color: #666;">Loading users...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = 'http://localhost:8003';
+
+        // Check server status
+        async function checkServerStatus() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/health`);
+                if (response.ok) {
+                    document.getElementById('statusIndicator').className = 'status-indicator online';
+                    document.getElementById('statusText').textContent = 'Server Online';
+                    return true;
+                }
+            } catch (error) {
+                document.getElementById('statusIndicator').className = 'status-indicator offline';
+                document.getElementById('statusText').textContent = 'Server Offline';
+                return false;
+            }
+        }
+
+        // Image preview
+        function setupImagePreview(inputId, previewId) {
+            document.getElementById(inputId).addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                const preview = document.getElementById(previewId);
+                
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        preview.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    preview.innerHTML = '';
+                }
+            });
+        }
+
+        // Show result
+        function showResult(elementId, type, message, data = null) {
+            const resultDiv = document.getElementById(elementId);
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'block';
+            
+            let html = `<strong>${message}</strong>`;
+            if (data) {
+                html += `<div class="result-content"><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+            }
+            resultDiv.innerHTML = html;
+        }
+
+        // Register user
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const userId = document.getElementById('userId').value;
+            const userName = document.getElementById('userName').value;
+            const imageFile = document.getElementById('registerImage').files[0];
+            
+            if (!imageFile) {
+                showResult('registerResult', 'error', 'Please select an image');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('user_id', userId);
+            formData.append('name', userName);
+            formData.append('file', imageFile);
+
+            const btn = document.getElementById('registerBtn');
+            const loading = document.getElementById('registerLoading');
+            
+            btn.disabled = true;
+            loading.classList.add('active');
+
+            try {
+                const response = await fetch(`${BASE_URL}/api/register`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showResult('registerResult', 'success', '✅ Registration Successful!', data);
+                    document.getElementById('registerForm').reset();
+                    document.getElementById('registerPreview').innerHTML = '';
+                    loadUsers();
+                } else {
+                    showResult('registerResult', 'error', '❌ Registration Failed', data);
+                }
+            } catch (error) {
+                showResult('registerResult', 'error', '❌ Error: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                loading.classList.remove('active');
+            }
+        });
+
+        // Recognize user
+        document.getElementById('recognizeForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const imageFile = document.getElementById('recognizeImage').files[0];
+            
+            if (!imageFile) {
+                showResult('recognizeResult', 'error', 'Please select an image');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', imageFile);
+
+            const btn = document.getElementById('recognizeBtn');
+            const loading = document.getElementById('recognizeLoading');
+            
+            btn.disabled = true;
+            loading.classList.add('active');
+
+            try {
+                const response = await fetch(`${BASE_URL}/api/recognize`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    if (data.recognized) {
+                        showResult('recognizeResult', 'success', '✅ User Recognized!', data);
+                    } else {
+                        showResult('recognizeResult', 'info', 'ℹ️ User Not Found', data);
+                    }
+                } else {
+                    showResult('recognizeResult', 'error', '❌ Recognition Failed', data);
+                }
+            } catch (error) {
+                showResult('recognizeResult', 'error', '❌ Error: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                loading.classList.remove('active');
+            }
+        });
+
+        // Load users
+        async function loadUsers() {
+            const usersList = document.getElementById('usersList');
+            usersList.innerHTML = '<p style="text-align: center; color: #666;">Loading...</p>';
+
+            try {
+                const response = await fetch(`${BASE_URL}/api/users`);
+                const data = await response.json();
+
+                if (data.users && data.users.length > 0) {
+                    usersList.innerHTML = data.users.map(user => `
+                        <div class="user-item">
+                            <div class="user-info">
+                                <strong>${user.name}</strong><br>
+                                <small>ID: ${user.user_id} | Registered: ${new Date(user.registered_at).toLocaleString()}</small>
+                            </div>
+                            <button class="delete-btn" onclick="deleteUser('${user.user_id}')">Delete</button>
+                        </div>
+                    `).join('');
+                } else {
+                    usersList.innerHTML = '<p style="text-align: center; color: #666;">No users registered yet.</p>';
+                }
+            } catch (error) {
+                usersList.innerHTML = '<p style="text-align: center; color: #dc3545;">Error loading users</p>';
+            }
+        }
+
+        // Delete user
+        async function deleteUser(userId) {
+            if (!confirm(`Are you sure you want to delete user ${userId}?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${BASE_URL}/api/users/${userId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    alert('User deleted successfully');
+                    loadUsers();
+                } else {
+                    alert('Failed to delete user');
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        // Initialize
+        setupImagePreview('registerImage', 'registerPreview');
+        setupImagePreview('recognizeImage', 'recognizePreview');
+        checkServerStatus();
+        loadUsers();
+
+        // Check server status every 30 seconds
+        setInterval(checkServerStatus, 30000);
+    </script>
+</body>
+</html>
+

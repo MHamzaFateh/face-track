@@ -1,0 +1,42 @@
+{
+  "25": {
+    "user_id": "25",
+    "name": "Bilal bhai",
+    "registered_at": "2025-12-03T13:19:13.693184",
+    "face_image_path": "data/faces\\25.jpg",
+    "embedding_path": "data/faces\\25_embedding.npy",
+    "embedding_size": 512
+  },
+  "35": {
+    "user_id": "35",
+    "name": "Hamza",
+    "registered_at": "2025-12-03T13:19:36.420767",
+    "face_image_path": "data/faces\\35.jpg",
+    "embedding_path": "data/faces\\35_embedding.npy",
+    "embedding_size": 512
+  },
+  "56": {
+    "user_id": "56",
+    "name": "Raza",
+    "registered_at": "2025-12-03T13:21:34.213218",
+    "face_image_path": "data/faces\\56.jpg",
+    "embedding_path": "data/faces\\56_embedding.npy",
+    "embedding_size": 512
+  },
+  "44": {
+    "user_id": "44",
+    "name": "Faraz",
+    "registered_at": "2025-12-03T13:23:45.400579",
+    "face_image_path": "data/faces\\44.jpg",
+    "embedding_path": "data/faces\\44_embedding.npy",
+    "embedding_size": 512
+  },
+  "77": {
+    "user_id": "77",
+    "name": "Saad bhai",
+    "registered_at": "2025-12-04T15:36:40.412668",
+    "face_image_path": "data/faces\\77.jpg",
+    "embedding_path": "data/faces\\77_embedding.npy",
+    "embedding_size": 512
+  }
+}

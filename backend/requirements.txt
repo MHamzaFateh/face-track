@@ -1,0 +1,36 @@
+# FastAPI and web server
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# Deep learning and face recognition
+deepface==0.0.96
+tensorflow==2.15.0
+tf-keras==2.15.0
+opencv-python==4.8.1.78
+numpy==1.26.4
+protobuf>=3.20.3,<5.0.0
+
+# Image processing
+Pillow==10.1.0
+
+# Data validation
+pydantic==2.5.0
+
+# Utilities
+python-dotenv==1.0.0
+
+# WebSocket and real-time features
+websockets==12.0
+
+# Advanced tracking pipeline - ByteTrack
+# ByteTrack works with Haar Cascade for face tracking
+# Optional: insightface for SCRFD + ArcFace (requires model download)
+# insightface==0.2.1
+# onnxruntime==1.16.0
+# onnx==1.16.2
+
+# Object tracking dependencies
+filterpy==1.4.5
+scikit-image==0.22.0
+
