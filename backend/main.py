@@ -217,6 +217,7 @@ async def websocket_live_tracking(websocket: WebSocket):
     Receives video frames and returns face detection/recognition results
     """
     await websocket.accept()
+    print("WebSocket connection accepted for live tracking")
     
     try:
         while True:
@@ -226,7 +227,11 @@ async def websocket_live_tracking(websocket: WebSocket):
             if "bytes" in data:
                 # Process frame and get tracking results
                 frame_bytes = data["bytes"]
-                results = await live_tracking_service.process_frame(frame_bytes)
+                # Note: process_frame is synchronous
+                results = live_tracking_service.process_frame(frame_bytes)
+                
+                # Add faces_tracked field (same as faces_detected in simple mode)
+                results['faces_tracked'] = results.get('faces_detected', 0)
                 
                 # Send results back to client
                 await websocket.send_json(results)
@@ -240,6 +245,8 @@ async def websocket_live_tracking(websocket: WebSocket):
         print("Client disconnected from live tracking")
     except Exception as e:
         print(f"WebSocket error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         await websocket.close()
 
 

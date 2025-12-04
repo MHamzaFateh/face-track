@@ -133,7 +133,7 @@ export function LiveTracking() {
 
       // Connect WebSocket (dynamic URL for mobile support)
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/ws/track`;
+      const wsUrl = `${protocol}//${window.location.host}/ws/live-tracking`;
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 

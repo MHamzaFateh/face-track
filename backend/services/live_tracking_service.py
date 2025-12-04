@@ -150,8 +150,9 @@ class LiveTrackingService:
             # Process faces (but not every frame)
             should_process = (self.frame_counter % self.process_every_n_frames) == 0
             
-            for (x, y, w, h) in faces:
+            for idx, (x, y, w, h) in enumerate(faces):
                 face_data = {
+                    'face_id': f'Face_{idx + 1:02d}',  # Generate face ID (Face_01, Face_02, etc.)
                     'bbox': {
                         'x': int(x),
                         'y': int(y),
