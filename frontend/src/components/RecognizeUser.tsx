@@ -81,7 +81,15 @@ export function RecognizeUser() {
       const data = await response.json();
 
       if (response.ok) {
-        setResult(data);
+        // API returns user details directly
+        setResult({
+          success: true,
+          recognized: data.recognized,
+          message: data.recognized 
+            ? `User recognized: ${data.name}` 
+            : 'No matching user found in database',
+          data: data
+        });
       } else {
         setResult({ 
           success: false, 
@@ -190,27 +198,47 @@ export function RecognizeUser() {
               {result.recognized ? 'User Recognized!' : result.success ? 'Not Recognized' : 'Error'}
             </AlertTitle>
             <AlertDescription>
-              {result.message}
-              {result.data && result.data.recognized && (
-                <div className="mt-3 space-y-2">
+              {result.data && result.data.recognized ? (
+                <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <Badge variant="success">Match Found</Badge>
+                    <Badge className="bg-green-600">Match Found</Badge>
                   </div>
-                  <div className="text-sm space-y-1">
-                    <p><strong>User ID:</strong> {result.data.user_id}</p>
-                    <p><strong>Name:</strong> {result.data.name}</p>
-                    <p><strong>Confidence:</strong> {((result.data.confidence || 0) * 100).toFixed(2)}%</p>
-                    <p><strong>Distance:</strong> {result.data.distance?.toFixed(4)}</p>
-                    <p className="text-muted-foreground text-xs">
-                      Threshold: {result.data.threshold}
-                    </p>
+                  <div className="bg-background/50 rounded-lg p-4 space-y-2">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-sm text-muted-foreground">Name:</span>
+                      <span className="text-lg font-semibold">{result.data.name}</span>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-sm text-muted-foreground">User ID:</span>
+                      <span className="font-medium">{result.data.user_id}</span>
+                    </div>
+                    {result.data.confidence !== undefined && (
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-sm text-muted-foreground">Confidence:</span>
+                        <span className="font-medium text-green-600">
+                          {((1 - (result.data.distance || 0)) * 100).toFixed(1)}%
+                        </span>
+                      </div>
+                    )}
+                    {result.data.distance !== undefined && (
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-sm text-muted-foreground">Distance:</span>
+                        <span className="text-sm font-mono">{result.data.distance.toFixed(4)}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
-              )}
-              {result.data && !result.data.recognized && result.data.closest_distance && (
-                <div className="mt-2 text-xs text-muted-foreground">
-                  <p>Closest distance: {result.data.closest_distance.toFixed(4)}</p>
-                  <p>Threshold: {result.data.threshold}</p>
+              ) : (
+                <div>
+                  {result.message}
+                  {result.data && !result.data.recognized && (
+                    <div className="mt-3 text-sm text-muted-foreground">
+                      <p>No matching user found in the database.</p>
+                      {result.data.distance !== undefined && (
+                        <p className="mt-1">Distance: {result.data.distance.toFixed(4)}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </AlertDescription>
