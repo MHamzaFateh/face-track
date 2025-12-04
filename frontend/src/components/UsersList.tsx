@@ -20,8 +20,9 @@ export function UsersList({ refreshTrigger }: { refreshTrigger: number }) {
     try {
       const response = await fetch('/api/users');
       const data = await response.json();
-      if (data.users) {
-        setUsers(data.users);
+      // API returns array directly
+      if (Array.isArray(data)) {
+        setUsers(data);
       }
     } catch (error) {
       console.error('Error loading users:', error);
