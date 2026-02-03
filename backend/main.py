@@ -84,27 +84,34 @@ async def register_user(
     - Success message with user details
     """
     try:
+        print(f"[REGISTER] Starting registration for user_id: {user_id}, name: {name}, file: {file.filename}")
+        
         # Validate file extension
         file_ext = Path(file.filename).suffix.lower()
         if file_ext not in settings.ALLOWED_EXTENSIONS:
+            error_msg = f"Invalid file type. Allowed: {', '.join(settings.ALLOWED_EXTENSIONS)}"
+            print(f"[REGISTER] Error: {error_msg}")
             raise HTTPException(
                 status_code=400,
-                detail=f"Invalid file type. Allowed: {', '.join(settings.ALLOWED_EXTENSIONS)}"
+                detail=error_msg
             )
         
         # Save uploaded file temporarily
         temp_path = os.path.join(settings.TEMP_DIR, file.filename)
+        print(f"[REGISTER] Saving temporary file to: {temp_path}")
         with open(temp_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
         
         try:
             # Register user
+            print(f"[REGISTER] Calling face_service.register_user...")
             result = face_service.register_user(
                 user_id=user_id,
                 name=name,
                 image_path=temp_path
             )
             
+            print(f"[REGISTER] Registration successful for {user_id}")
             return {
                 "success": True,
                 "message": "User registered successfully",
@@ -114,9 +121,16 @@ async def register_user(
             # Clean up temp file
             if os.path.exists(temp_path):
                 os.remove(temp_path)
+                print(f"[REGISTER] Cleaned up temp file: {temp_path}")
                 
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        error_msg = str(e)
+        print(f"[REGISTER] Registration failed: {error_msg}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=400, detail=error_msg)
 
 
 @app.post("/api/recognize", response_model=UserRecognitionResponse)
@@ -212,42 +226,86 @@ async def delete_user(user_id: str):
 @app.websocket("/ws/live-tracking")
 async def websocket_live_tracking(websocket: WebSocket):
     """
-    WebSocket endpoint for real-time face tracking
+    WebSocket endpoint for real-time face tracking with robust error handling
     
     Receives video frames and returns face detection/recognition results
     """
     await websocket.accept()
-    print("WebSocket connection accepted for live tracking")
+    print("[WebSocket] Connection accepted for live tracking")
+    
+    frame_count = 0
+    error_count = 0
+    max_errors = 5  # Maximum consecutive errors before closing
     
     try:
         while True:
-            # Receive frame data from client
-            data = await websocket.receive()
-            
-            if "bytes" in data:
-                # Process frame and get tracking results
-                frame_bytes = data["bytes"]
-                # Note: process_frame is synchronous
-                results = live_tracking_service.process_frame(frame_bytes)
+            try:
+                # Receive frame data from client with timeout
+                data = await websocket.receive()
                 
-                # Add faces_tracked field (same as faces_detected in simple mode)
-                results['faces_tracked'] = results.get('faces_detected', 0)
-                
-                # Send results back to client
-                await websocket.send_json(results)
-            elif "text" in data:
-                # Handle text commands (e.g., "start", "stop")
-                command = data["text"]
-                if command == "stop":
+                if "bytes" in data:
+                    frame_count += 1
+                    
+                    # Process frame and get tracking results
+                    frame_bytes = data["bytes"]
+                    
+                    # Run synchronous processing in thread pool to avoid blocking
+                    import asyncio
+                    loop = asyncio.get_event_loop()
+                    results = await loop.run_in_executor(
+                        None, 
+                        live_tracking_service.process_frame, 
+                        frame_bytes
+                    )
+                    
+                    # Add faces_tracked field
+                    if 'faces_tracked' not in results:
+                        results['faces_tracked'] = results.get('faces_detected', 0)
+                    
+                    # Send results back to client
+                    try:
+                        await websocket.send_json(results)
+                        error_count = 0  # Reset error count on success
+                    except Exception as send_error:
+                        print(f"[WebSocket] Error sending results: {send_error}")
+                        error_count += 1
+                        if error_count >= max_errors:
+                            print(f"[WebSocket] Too many send errors ({error_count}), closing connection")
+                            break
+                        
+                elif "text" in data:
+                    # Handle text commands (e.g., "start", "stop")
+                    command = data["text"]
+                    print(f"[WebSocket] Received command: {command}")
+                    if command == "stop":
+                        print("[WebSocket] Stop command received, closing connection")
+                        break
+                        
+            except WebSocketDisconnect:
+                print("[WebSocket] Client disconnected during frame processing")
+                break
+            except Exception as frame_error:
+                error_count += 1
+                print(f"[WebSocket] Error processing frame {frame_count}: {frame_error}")
+                if error_count >= max_errors:
+                    print(f"[WebSocket] Too many errors ({error_count}), closing connection")
                     break
+                # Continue to next frame
+                continue
                     
     except WebSocketDisconnect:
-        print("Client disconnected from live tracking")
+        print(f"[WebSocket] Client disconnected (processed {frame_count} frames)")
     except Exception as e:
-        print(f"WebSocket error: {str(e)}")
+        print(f"[WebSocket] Fatal error: {str(e)}")
         import traceback
         traceback.print_exc()
-        await websocket.close()
+    finally:
+        # Always try to close gracefully
+        try:
+            await websocket.close()
+            print(f"[WebSocket] Connection closed (processed {frame_count} frames)")
+        except:
+            pass
 
 
 if __name__ == "__main__":
@@ -256,6 +314,9 @@ if __name__ == "__main__":
         "main:app",
         host=settings.API_HOST,
         port=settings.API_PORT,
-        reload=True
+        reload=True,
+        ws_ping_interval=20,  # Send ping every 20 seconds
+        ws_ping_timeout=20,   # Wait 20 seconds for pong
+        timeout_keep_alive=30  # Keep connection alive for 30 seconds
     )
 

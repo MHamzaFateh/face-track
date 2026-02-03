@@ -23,6 +23,7 @@ interface FrameResult {
   faces_tracked: number;
   recognitions: Recognition[];
   using_insightface?: boolean;
+  error?: string;
 }
 
 export function LiveTracking() {
@@ -138,8 +139,9 @@ export function LiveTracking() {
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log('WebSocket connected');
+        console.log('✅ WebSocket connected');
         setIsStreaming(true);
+        setError('');
         startSendingFrames();
       };
 
@@ -164,20 +166,27 @@ export function LiveTracking() {
               fpsCounterRef.current.frames = 0;
               fpsCounterRef.current.lastTime = now;
             }
+          } else if (data.error) {
+            console.error('Server error:', data.error);
           }
         } catch (err) {
-          console.error('Error parsing message:', err);
+          console.error('❌ Error parsing message:', err);
         }
       };
 
       ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        setError('WebSocket connection error');
+        console.error('❌ WebSocket error:', error);
+        setError('Connection error - check if backend is running');
       };
 
-      ws.onclose = () => {
-        console.log('WebSocket closed');
+      ws.onclose = (event) => {
+        console.log('🔌 WebSocket closed:', event.code, event.reason);
         setIsStreaming(false);
+        
+        // Show user-friendly error message
+        if (event.code !== 1000) { // 1000 = normal closure
+          setError('Connection lost. Please try starting tracking again.');
+        }
       };
 
     } catch (error) {
@@ -201,6 +210,11 @@ export function LiveTracking() {
         return;
       }
 
+      // Skip if video not ready
+      if (video.videoWidth === 0 || video.videoHeight === 0) {
+        return;
+      }
+
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       ctx.drawImage(video, 0, 0);
@@ -208,16 +222,21 @@ export function LiveTracking() {
       canvas.toBlob(
         (blob) => {
           if (blob && wsRef.current?.readyState === WebSocket.OPEN) {
-            wsRef.current.send(blob);
+            try {
+              wsRef.current.send(blob);
+            } catch (err) {
+              console.error('Error sending frame:', err);
+              // Don't stop - let WebSocket error handler deal with it
+            }
           }
         },
         'image/jpeg',
-        0.8
+        0.6  // Lower quality for better performance
       );
     };
 
-    // Send frames at ~10 FPS
-    sendIntervalRef.current = setInterval(sendFrame, 100);
+    // Send frames at ~6-7 FPS (150ms interval) for better performance
+    sendIntervalRef.current = setInterval(sendFrame, 150);
   };
 
   const stopTracking = () => {

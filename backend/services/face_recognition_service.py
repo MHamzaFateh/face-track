@@ -76,12 +76,13 @@ class FaceRecognitionService:
         except Exception as e:
             raise Exception(f"No face detected in the image: {str(e)}")
     
-    def _get_face_embedding(self, image_path: str) -> np.ndarray:
+    def _get_face_embedding(self, image_path: str, enforce_detection: bool = True) -> np.ndarray:
         """
         Get face embedding from image
         
         Parameters:
         - image_path: Path to the image
+        - enforce_detection: Whether to strictly enforce face detection (default True)
         
         Returns:
         - Face embedding as numpy array
@@ -91,7 +92,7 @@ class FaceRecognitionService:
             embedding_objs = DeepFace.represent(
                 img_path=image_path,
                 model_name=self.model_name,
-                enforce_detection=True,
+                enforce_detection=enforce_detection,
                 detector_backend='opencv'
             )
             
@@ -132,13 +133,14 @@ class FaceRecognitionService:
         db = self._load_database()
         return user_id in db
     
-    def check_face_exists(self, image_path: str, threshold: float = None) -> Dict:
+    def check_face_exists(self, image_path: str, threshold: float = None, enforce_detection: bool = True) -> Dict:
         """
         Check if a face is already registered in the system
         
         Parameters:
         - image_path: Path to the face image to check
         - threshold: Recognition threshold (uses default if None)
+        - enforce_detection: Whether to strictly enforce face detection (default True)
         
         Returns:
         - Dictionary with exists status and matching user info
@@ -148,7 +150,7 @@ class FaceRecognitionService:
                 threshold = self.threshold
             
             # Get face embedding for the new image
-            query_embedding = self._get_face_embedding(image_path)
+            query_embedding = self._get_face_embedding(image_path, enforce_detection=enforce_detection)
             
             # Load database
             db = self._load_database()
@@ -204,24 +206,35 @@ class FaceRecognitionService:
         - Registration result
         """
         try:
+            print(f"[FaceService] Starting registration for user_id: {user_id}, name: {name}")
+            
             # Check if user ID already exists
             if self.user_exists(user_id):
-                raise Exception(f"User ID '{user_id}' already exists")
+                error = f"User ID '{user_id}' already exists"
+                print(f"[FaceService] Error: {error}")
+                raise Exception(error)
             
+            print(f"[FaceService] User ID is unique, detecting face in image...")
             # Detect face in image
             self._detect_face(image_path)
+            print(f"[FaceService] Face detected successfully")
             
             # Check if this face is already registered
+            print(f"[FaceService] Checking for duplicate faces...")
             face_check = self.check_face_exists(image_path)
             if face_check["exists"]:
-                raise Exception(
+                error = (
                     f"This face is already registered! "
                     f"Existing user: {face_check['matched_name']} (ID: {face_check['matched_user_id']}). "
                     f"Match confidence: {face_check['confidence']*100:.1f}%"
                 )
+                print(f"[FaceService] Error: {error}")
+                raise Exception(error)
             
+            print(f"[FaceService] No duplicate face found, extracting embedding...")
             # Get face embedding
             embedding = self._get_face_embedding(image_path)
+            print(f"[FaceService] Embedding extracted, size: {len(embedding)}")
             
             # Save face image
             face_image_path = os.path.join(self.faces_dir, f"{user_id}.jpg")
@@ -315,22 +328,24 @@ class FaceRecognitionService:
         except Exception as e:
             raise Exception(f"Recognition by embedding failed: {str(e)}")
     
-    def recognize_user(self, image_path: str) -> Dict:
+    def recognize_user(self, image_path: str, enforce_detection: bool = True) -> Dict:
         """
         Recognize a user from their face image
         
         Parameters:
         - image_path: Path to the face image
+        - enforce_detection: Whether to strictly enforce face detection (default True)
         
         Returns:
         - Recognition result
         """
         try:
-            # Detect face in image
-            self._detect_face(image_path)
+            # Detect face in image only if enforcement is enabled
+            if enforce_detection:
+                self._detect_face(image_path)
             
-            # Get face embedding
-            query_embedding = self._get_face_embedding(image_path)
+            # Get face embedding with optional enforcement
+            query_embedding = self._get_face_embedding(image_path, enforce_detection=enforce_detection)
             
             # Load database
             db = self._load_database()

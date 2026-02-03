@@ -18,7 +18,7 @@ class Settings:
     # Face Recognition Settings
     FACE_MODEL: str = os.getenv("FACE_MODEL", "Facenet512")  # Options: VGG-Face, Facenet, Facenet512, OpenFace, DeepFace, DeepID, ArcFace, Dlib, SFace
     DISTANCE_METRIC: str = os.getenv("DISTANCE_METRIC", "cosine")  # Options: cosine, euclidean, euclidean_l2
-    RECOGNITION_THRESHOLD: float = float(os.getenv("RECOGNITION_THRESHOLD", "0.4"))  # Lower = more strict
+    RECOGNITION_THRESHOLD: float = float(os.getenv("RECOGNITION_THRESHOLD", "0.5"))  # Lower = more strict, 0.5 = balanced for live tracking
     DUPLICATE_FACE_THRESHOLD: float = float(os.getenv("DUPLICATE_FACE_THRESHOLD", "0.4"))  # Threshold for detecting duplicate registrations
     
     # Face Detection Settings (Haar Cascade)

@@ -4,7 +4,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { UserPlus, Loader2, CheckCircle2, XCircle, Camera, Upload } from 'lucide-react';
+import { UserPlus, Loader2, CheckCircle2, XCircle, Camera } from 'lucide-react';
 import { CameraCapture } from './CameraCapture';
 
 interface RegisterResult {

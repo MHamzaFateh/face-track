@@ -38,5 +38,21 @@
     "face_image_path": "data/faces\\77.jpg",
     "embedding_path": "data/faces\\77_embedding.npy",
     "embedding_size": 512
+  },
+  "07": {
+    "user_id": "07",
+    "name": "Ronaldo",
+    "registered_at": "2025-12-09T11:54:55.000301",
+    "face_image_path": "data/faces\\07.jpg",
+    "embedding_path": "data/faces\\07_embedding.npy",
+    "embedding_size": 512
+  },
+  "55": {
+    "user_id": "55",
+    "name": "Safeer Ahmed",
+    "registered_at": "2025-12-09T13:37:57.128238",
+    "face_image_path": "data/faces\\55.jpg",
+    "embedding_path": "data/faces\\55_embedding.npy",
+    "embedding_size": 512
   }
 }

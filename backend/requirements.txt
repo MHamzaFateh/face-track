@@ -8,7 +8,7 @@ deepface==0.0.96
 tensorflow==2.15.0
 tf-keras==2.15.0
 opencv-python==4.8.1.78
-numpy==1.26.4
+numpy==1.24.3
 protobuf>=3.20.3,<5.0.0
 
 # Image processing
